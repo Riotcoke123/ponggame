@@ -39,10 +39,6 @@ ponggame/
 └── script.js
 </code></pre>
 
-<h2>📸 Screenshot</h2>
-<p>
-  <img src="https://github.com/Riotcoke123/ponggame/raw/main/screenshot.png" alt="Pong Game Screenshot" width="600">
-</p>
 
 <h2>📜 License</h2>
 <p>
@@ -51,7 +47,3 @@ ponggame/
   You are free to run, study, share, and modify this software under the same license.
 </p>
 
-<h2>👨‍💻 Author</h2>
-<ul>
-  <li><a href="https://github.com/Riotcoke123">Riotcoke123</a></li>
-</ul>
