@@ -1,5 +1,6 @@
 const canvas = document.getElementById("pong");
 const ctx = canvas.getContext("2d");
+const difficultySelect = document.getElementById("difficulty");
 
 const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
@@ -18,6 +19,14 @@ const BALL_SPEED = 5;
 let scoreLeft = 0;
 let scoreRight = 0;
 
+// Difficulty settings
+const difficulties = {
+    easy: 0.05,
+    medium: 0.15,
+    hard: 1.0,
+};
+let aiReactionSpeed = difficulties[difficultySelect.value];
+
 // Player paddle (left)
 const leftPaddle = {
     x: PADDLE_MARGIN,
@@ -32,7 +41,6 @@ const rightPaddle = {
     y: HEIGHT / 2 - PADDLE_HEIGHT / 2,
     width: PADDLE_WIDTH,
     height: PADDLE_HEIGHT,
-    vy: 0,
 };
 
 // Ball
@@ -45,6 +53,11 @@ const ball = {
     vy: BALL_SPEED * (Math.random() * 2 - 1),
 };
 
+// Listen for difficulty changes
+difficultySelect.addEventListener("change", () => {
+    aiReactionSpeed = difficulties[difficultySelect.value];
+});
+
 // Mouse control for left paddle
 canvas.addEventListener("mousemove", function (e) {
     const rect = canvas.getBoundingClientRect();
@@ -56,25 +69,19 @@ canvas.addEventListener("mousemove", function (e) {
 
 // Draw everything
 function draw() {
-    // Clear
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
-    // Draw middle line
     ctx.fillStyle = "#fff";
     for (let y = 0; y < HEIGHT; y += 28) {
         ctx.fillRect(WIDTH / 2 - 2, y, 4, 16);
     }
 
-    // Draw paddles
-    ctx.fillStyle = "#fff";
     ctx.fillRect(leftPaddle.x, leftPaddle.y, leftPaddle.width, leftPaddle.height);
     ctx.fillRect(rightPaddle.x, rightPaddle.y, rightPaddle.width, rightPaddle.height);
-
-    // Draw ball
     ctx.fillRect(ball.x, ball.y, ball.size, ball.size);
 }
 
-// Collision detection helper
+// Collision helper
 function isColliding(a, b) {
     return (
         a.x < b.x + b.width &&
@@ -84,7 +91,7 @@ function isColliding(a, b) {
     );
 }
 
-// Reset ball after score
+// Reset ball
 function resetBall(direction) {
     ball.x = WIDTH / 2 - BALL_SIZE / 2;
     ball.y = HEIGHT / 2 - BALL_SIZE / 2;
@@ -94,41 +101,37 @@ function resetBall(direction) {
 
 // Update game logic
 function update() {
-    // Move ball
     ball.x += ball.vx;
     ball.y += ball.vy;
 
-    // Ball collision with top/bottom wall
     if (ball.y <= 0 || ball.y + ball.size >= HEIGHT) {
         ball.vy *= -1;
         ball.y = Math.max(0, Math.min(ball.y, HEIGHT - ball.size));
     }
 
-    // Ball collision with left paddle
+    // Left paddle collision
     if (isColliding(
         { x: ball.x, y: ball.y, size: ball.size },
         { x: leftPaddle.x, y: leftPaddle.y, width: leftPaddle.width, height: leftPaddle.height }
     )) {
         ball.vx = Math.abs(ball.vx);
-        // Add some "spin"
         let collidePoint = (ball.y + ball.size / 2) - (leftPaddle.y + leftPaddle.height / 2);
-        collidePoint = collidePoint / (leftPaddle.height / 2);
+        collidePoint /= (leftPaddle.height / 2);
         ball.vy = BALL_SPEED * collidePoint;
     }
 
-    // Ball collision with right paddle
+    // Right paddle collision
     if (isColliding(
         { x: ball.x, y: ball.y, size: ball.size },
         { x: rightPaddle.x, y: rightPaddle.y, width: rightPaddle.width, height: rightPaddle.height }
     )) {
         ball.vx = -Math.abs(ball.vx);
-        // Add some "spin"
         let collidePoint = (ball.y + ball.size / 2) - (rightPaddle.y + rightPaddle.height / 2);
-        collidePoint = collidePoint / (rightPaddle.height / 2);
+        collidePoint /= (rightPaddle.height / 2);
         ball.vy = BALL_SPEED * collidePoint;
     }
 
-    // Score left or right
+    // Score conditions
     if (ball.x <= 0) {
         scoreRight++;
         document.getElementById("score-right").textContent = scoreRight;
@@ -140,25 +143,20 @@ function update() {
         resetBall(-1);
     }
 
-    // Simple AI for right paddle
-    const target = ball.y + ball.size / 2;
-    const paddleCenter = rightPaddle.y + rightPaddle.height / 2;
-    if (target < paddleCenter - 10) {
-        rightPaddle.y -= PADDLE_SPEED;
-    } else if (target > paddleCenter + 10) {
-        rightPaddle.y += PADDLE_SPEED;
-    }
-    // Clamp paddle within bounds
+    // Advanced AI movement
+    const targetY = ball.y + ball.size / 2;
+    const centerY = rightPaddle.y + rightPaddle.height / 2;
+    rightPaddle.y += (targetY - centerY) * aiReactionSpeed;
+
+    // Clamp
     if (rightPaddle.y < 0) rightPaddle.y = 0;
     if (rightPaddle.y + rightPaddle.height > HEIGHT) rightPaddle.y = HEIGHT - rightPaddle.height;
 }
 
-// Game loop
 function gameLoop() {
     update();
     draw();
     requestAnimationFrame(gameLoop);
 }
 
-// Start the game
 gameLoop();
